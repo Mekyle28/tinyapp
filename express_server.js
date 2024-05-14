@@ -52,7 +52,6 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
   const tempShortULR = generateRandomString();
   urlDatabase[tempShortULR] = req.body.longURL;
   res.redirect(`/urls/${tempShortULR}`); // Respond with 'Ok' (we will replace this)
