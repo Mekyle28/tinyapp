@@ -29,6 +29,7 @@
             <tr>
               <th scope="col">Short URL ID</th>
               <th scope="col">Long URL</th>
+              <th scope="col">Update</th>
               <th scope="col">Delete</th>
             </tr>
           </thead>
@@ -37,8 +38,15 @@
               <tr>
                 <td><%= id %></td>
                 <td><%= urls[id] %></td>
-                <td>  <% const path = `/urls/${id}/delete` %>
-                <form class="form-inline" method="POST" action= <%= path %>>
+
+                <td>  <% const pathUpdate = `/urls/${id}/update` %>
+                  <form class="form-inline" method="POST" action= <%= pathUpdate %>>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                   </form>
+                </td>
+
+                <td>  <% const pathDelete = `/urls/${id}/delete` %>
+                <form class="form-inline" method="POST" action= <%= pathDelete %>>
                   <button type="submit" class="btn btn-primary">Delete</button>
                  
                 </form>
@@ -48,6 +56,7 @@
           </tbody>
         </table>
       </main>
+      <a href="/">Go back home</a>
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
