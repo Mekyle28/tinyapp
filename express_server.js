@@ -40,6 +40,11 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+app.get("/register", (req, res) => {
+  const templateVars = {username: req.cookies["username"]};
+  res.render("register", templateVars);
+});
+
 app.get("/urls/new", (req, res) => {
   const templateVars = {username: req.cookies["username"]};
   res.render("urls_new", templateVars);
@@ -87,9 +92,9 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  //const username = req.body;
-  //res.clearCookie("username", username.username);
-  res.clearCookie("username");
+  const username = req.body;
+  res.clearCookie("username", username.username);
+  // res.clearCookie("username");
   res.redirect("/urls");
 });
 
