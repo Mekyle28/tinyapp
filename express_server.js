@@ -14,7 +14,7 @@ const generateRandomString = function() {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
-}
+};
 
 
 const urlDatabase = {
@@ -73,6 +73,12 @@ app.post("/urls/:id/edit", (req, res) => {
   urlDatabase[shortU] = req.body.updateLongURL;
   res.redirect("/urls");
   
+});
+
+app.post("/login", (req, res) => {
+  const username = req.body;
+  res.cookie("username", username.username);
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
