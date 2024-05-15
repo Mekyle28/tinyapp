@@ -46,7 +46,8 @@
                 </td>
 
                 <td>  <% const pathDelete = `/urls/${id}/delete` %>
-                <form class="form-inline" method="POST" action= <%= pathDelete %>>
+                  <form  method="POST" action= "/urls/<%= id %>/delete">
+                  <form  method="POST" action= <%= pathDelete %>>
                   <button type="submit" class="btn btn-primary">Delete</button>
                  
                 </form>

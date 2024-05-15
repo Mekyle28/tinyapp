@@ -16,12 +16,13 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        
         <div class="header-login">
           <form action="/login" method="post">
+            
             <input type="text" name="username" placeholder="Username" class="text-align"  style="width: 100px; margin: 1em">
             <button type="submit" class="btn btn-success">Login</button>
           </form>
         </div>
+        <p>Logged in as: <%= username %></p>
   </nav>
 </header>
