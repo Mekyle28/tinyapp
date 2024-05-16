@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require('cookie-parser');
+const { registerUser, userAuthentication, findUserByEmail, findUserById} = require('./helperFunctions/functions');
 const app = express();
 const PORT = 8080;
 
@@ -65,25 +66,29 @@ app.get("/u/:id", (req, res) => {
 
 
 app.post("/register", (req, res) => {
-  let userId = generateRandomString();
-  const email = req.body.email;
-  const password = req.body.password;
-  users[userId] = {id: userId, email: email, password: password};
-  // console.log("users obj:", users);
-  // const userValues = (Object.values(users));
-  // for (let user of users) {
-  //   console.log("values", user);
-  //   console.log("email", user[email]);
-  //   if (user[email] === email) {
-  //     console.log(`error! there is already an account with the username ${user[email]}`);
-  //   }
-  //};
-  res.cookie("userid", userId);
-  // console.log("please work cookies", req.cookies["userid"]);
-  // console.log(users);
-  // console.log(users[userId]);
-  // console.log(users[req.cookies["userid"]]);
+  //const userInfoFromForm = req.body;
+  //console.log("info from form", userInfoFromForm);
+  const regUserinfo = registerUser(req.body, users);
+  console.log("info from function", regUserinfo);
+  if (regUserinfo.error) {
+    const templateVars = {error: regUserinfo.error, user: users[req.cookies["userid"]]};
+    res.render("failed_registration", templateVars);
+  }
+  users[regUserinfo.user.id] = regUserinfo.user;
+  res.cookie("userid", regUserinfo.user.id);
   res.redirect("/urls");
+  // let userId = generateRandomString();
+  // console.log(req.body);
+  // const email = req.body.email;
+  // const password = req.body.password;
+  // users[userId] = {id: userId, email: email, password: password};
+
+  // res.cookie("userid", userId);
+  // // console.log("please work cookies", req.cookies["userid"]);
+  // // console.log(users);
+  // // console.log(users[userId]);
+  // // console.log(users[req.cookies["userid"]]);
+  // res.redirect("/urls");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
