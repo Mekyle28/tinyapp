@@ -37,6 +37,11 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = {user: users[req.cookies["userid"]], urls: urlDatabase };
+  res.render("login", templateVars);
+});
+
 app.get("/urls", (req, res) => {
   const templateVars = {user: users[req.cookies["userid"]], urls: urlDatabase };
   res.render("urls_index", templateVars);
