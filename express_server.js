@@ -9,6 +9,26 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+
+// app.use((req, res, next) => {
+//   const {error} = findUserById(req.cookies["userid"], users);
+//   const whiteList = ["/", "/login", "/register"];
+
+//   if (error && !whiteList.includes(req.url)) {
+//     return res.redirect("/login");
+//   }
+//   return next();
+// });
+
+app.use((req, res, next) => {
+  const {error} = findUserById(req.cookies["userid"], users);
+
+  if (error && (req.url === "/urls/new")) {
+    return res.redirect("/login");
+  }
+  return next();
+});
+
 const generateRandomString = function() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -27,7 +47,8 @@ const urlDatabase = {
 };
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const templateVars = {user: users[req.cookies["userid"]], urls: urlDatabase };
+  res.render("home_page", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -38,6 +59,9 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
+  if (req.cookies["userid"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = {user: users[req.cookies["userid"]], urls: urlDatabase };
   res.render("login", templateVars);
 });
@@ -48,11 +72,15 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  if (req.cookies["userid"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = {user: users[req.cookies["userid"]]};
   res.render("register", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+
   const templateVars = {user: users[req.cookies["userid"]]};
   res.render("urls_new", templateVars);
 });
@@ -99,11 +127,19 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
+  if (!req.cookies["userid"]) {
+    res.send(`Sorry, please login to delete ${urlDatabase[req.params.id]}`);
+    return;
+  }
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
 });
 
 app.post("/urls/:id/update", (req, res) => {
+  if (!req.cookies["userid"]) {
+    res.send(`Sorry, please login to update ${urlDatabase[req.params.id]}`);
+    return;
+  }
   const shortURL = req.params.id;
   res.redirect(`/urls/${shortURL}`);
 });
