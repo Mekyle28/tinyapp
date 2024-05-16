@@ -45,15 +45,15 @@ const registerUser = function(newUserInfoObj, users) {
 
 const userAuthentication = function(email, password, users) {
   const userObj = findUserByEmail(email, users);
+  const idNum = userObj.user;
   // if error is present the email wasn't found
   if (userObj.error) {
     return {error: `Error: email not found :( please make sure ${email} is the correct email`, user: null};
   }
-  if (userObj.user.password !== password) {
+  if (users[idNum].password !== password) {
     return {error: `Error: invalid password`, user: null};
   }
-  const userInfo = userObj.user;
-  return {error: null, user: userInfo};
+  return {error: null, user: idNum};
 };
 
 
@@ -62,7 +62,7 @@ const findUserByEmail = function(email, users) {
   
   for (let idNum of userIdArr) {
     if (users[idNum].email === email) {
-      return {error: null, user: users[idNum]};
+      return {error: null, user: idNum};
     }
   }
   return {error: "No user with that email", user: null};

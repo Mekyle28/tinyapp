@@ -76,6 +76,8 @@ app.post("/register", (req, res) => {
   const regUserinfo = registerUser(req.body, users);
   console.log("info from function", regUserinfo);
   if (regUserinfo.error) {
+    // res.status(400).send(regUserinfo.error);
+    // return;
     const templateVars = {error: regUserinfo.error, user: users[req.cookies["userid"]]};
     res.render("failed_registration", templateVars);
   }
@@ -121,16 +123,21 @@ app.post("/urls/:id/edit", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const username = req.body;
-  res.cookie("username", username.username);
+  const login = userAuthentication(req.body.email, req.body.password, users);
+  if (login.error) {
+    return res.status(403).send(login.error);
+  }
+  console.log("returned user:", login.user);
+  res.cookie("userid", login.user);
   res.redirect("/urls");
 });
 
+// res.status(400).send(regUserinfo.error);
+// return;
+
 app.post("/logout", (req, res) => {
-  // const username = req.body;
   res.clearCookie("userid");
-  // res.clearCookie("username");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 app.listen(PORT, () => {
