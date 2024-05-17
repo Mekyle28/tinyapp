@@ -1,7 +1,7 @@
 const express = require("express");
-const cookieParser = require('cookie-parser');
 const { registerUser, userAuthentication, findUserByEmail, findUserById, urlsForUser} = require('./helperFunctions/functions');
 const bcrypt = require("bcryptjs");
+const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const app = express();
 const PORT = 8080;
@@ -10,11 +10,15 @@ app.set("view engine", "ejs");
 
 app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
+app.use(cookieSession({
+  name: 'session',
+  keys: ["chicken55942"],
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
 
 // app.use((req, res, next) => {
-//   const {error} = findUserById(req.cookies["userid"], users);
+//   const {error} = findUserById(req.session["userid"], users);
 //   const whiteList = ["/", "/login", "/register"];
 
 //   if (error && !whiteList.includes(req.url)) {
@@ -24,7 +28,7 @@ app.use(cookieParser());
 // });
 
 app.use((req, res, next) => {
-  const {error} = findUserById(req.cookies["userid"], users);
+  const {error} = findUserById(req.session["userid"], users);
 
   if (error && (req.url === "/urls/new")) {
     return res.redirect("/login");
@@ -53,6 +57,7 @@ const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
     userID: "aJ48lW",
+
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
@@ -66,7 +71,7 @@ const urlDatabase = {
 };
 
 app.get("/", (req, res) => {
-  const templateVars = {user: users[req.cookies["userid"]], urls: urlDatabase };
+  const templateVars = {user: users[req.session["userid"]], urls: urlDatabase };
   res.render("home_page", templateVars);
 });
 
@@ -75,10 +80,10 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  if (req.cookies["userid"]) {
+  if (req.session["userid"]) {
     return res.redirect("/urls");
   }
-  const templateVars = {user: users[req.cookies["userid"]], urls: urlDatabase };
+  const templateVars = {user: users[req.session["userid"]], urls: urlDatabase };
   res.render("login", templateVars);
 });
 
@@ -100,42 +105,43 @@ app.get("/login", (req, res) => {
 
 // const urlsForUser = function(userID, urlDatabase) {
 //   console.log(userID);
-//   let userShortUrls = [];
+//   let userUrlDatabase = {};
 //   for (let shortUrl in urlDatabase) {
 //     console.log("short Url obj", urlDatabase[shortUrl]);
 //     console.log("-----------------");
 //     if (urlDatabase[shortUrl].userID === userID) {
-//       userShortUrls.push(shortUrl);
+//       userUrlDatabase[shortUrl] = urlDatabase[shortUrl];
 //     }
 //   }
-//   console.log(userShortUrls);
-//   return userShortUrls;
+//   console.log("******************");
+//   console.log("userUrlDatabase ", userUrlDatabase);
+//   return userUrlDatabase;
 // };
 
-
 app.get("/urls", (req, res) => {
-  const userUrls = urlsForUser(req.cookies["userid"], urlDatabase);
+  const userUrls = urlsForUser(req.session["userid"], urlDatabase);
   
-  const templateVars = {user: users[req.cookies["userid"]], userUrls: userUrls, allUrls: urlDatabase };
+  const templateVars = {user: users[req.session["userid"]], userUrls: userUrls};
+  console.log("template vars", templateVars);
   res.render("urls_index", templateVars);
 });
 
 app.get("/register", (req, res) => {
-  if (req.cookies["userid"]) {
+  if (req.session["userid"]) {
     return res.redirect("/urls");
   }
-  const templateVars = {user: users[req.cookies["userid"]]};
+  const templateVars = {user: users[req.session["userid"]]};
   res.render("register", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
 
-  const templateVars = {user: users[req.cookies["userid"]]};
+  const templateVars = {user: users[req.session["userid"]]};
   res.render("urls_new", templateVars);
 });
 
 app.get('/urls/:id/', (req, res) => {
-  const templateVars = {user: users[req.cookies["userid"]],
+  const templateVars = {user: users[req.session["userid"]],
     id: req.params.id,
     longURL: urlDatabase[req.params.id].longURL};
   res.render("urls_show", templateVars);
@@ -155,28 +161,16 @@ app.post("/register", (req, res) => {
   if (regUserinfo.error) {
     // res.status(400).send(regUserinfo.error);
     // return;
-    const templateVars = {error: regUserinfo.error, user: users[req.cookies["userid"]]};
+    const templateVars = {error: regUserinfo.error, user: users[req.session["userid"]]};
     res.render("failed_registration", templateVars);
   }
   users[regUserinfo.user.id] = regUserinfo.user;
-  res.cookie("userid", regUserinfo.user.id);
+  req.session.userid = regUserinfo.user.id;
   res.redirect("/urls");
-  // let userId = generateRandomString();
-  // console.log(req.body);
-  // const email = req.body.email;
-  // const password = req.body.password;
-  // users[userId] = {id: userId, email: email, password: password};
-
-  // res.cookie("userid", userId);
-  // // console.log("please work cookies", req.cookies["userid"]);
-  // // console.log(users);
-  // // console.log(users[userId]);
-  // // console.log(users[req.cookies["userid"]]);
-  // res.redirect("/urls");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  if (!req.cookies["userid"]) {
+  if (!req.session["userid"]) {
     res.send(`Sorry, please login to delete ${urlDatabase[req.params.id]}`);
     return;
   }
@@ -186,7 +180,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 // the request from the update button that brings you to the urls/id page where you can make the actual edit
 app.post("/urls/:id/update", (req, res) => {
-  if (!req.cookies["userid"]) {
+  if (!req.session["userid"]) {
     res.send(`Sorry, please login to update ${urlDatabase[req.params.id]}`);
     return;
   }
@@ -194,21 +188,26 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-
+//make new url
 app.post("/urls", (req, res) => {
   const tempShortULR = generateRandomString();
   const tempShortULRObj = {longURL: req.body.longURL,
-    userID: req.cookies["userid"],
+    userID: req.session["userid"],
     id: tempShortULR};
   
-  console.log(tempShortULR);
+  console.log("tempShortURL should be alone", tempShortULR);
+  console.log("tempShortURLobj should be object with three thisngs", tempShortULRObj);
   urlDatabase[tempShortULR] = tempShortULRObj;
+  console.log("Updated Url Database", urlDatabase);
   res.redirect(`/urls/${tempShortULR}`); // Respond with 'Ok' (we will replace this)
 });
 
 app.post("/urls/:id/edit", (req, res) => {
   const shortU = (req.params.id);
   urlDatabase[shortU].longURL = req.body.updateLongURL;
+  console.log("---------'");
+  console.log("updated database after url has been edited", urlDatabase);
+  console.log("---------'");
   res.redirect("/urls");
   
 });
@@ -219,7 +218,7 @@ app.post("/login", (req, res) => {
     return res.status(403).send(login.error);
   }
   console.log("returned user:", login.user);
-  res.cookie("userid", login.user);
+  req.session.userid = login.user;
   res.redirect("/urls");
 });
 
@@ -227,7 +226,7 @@ app.post("/login", (req, res) => {
 // return;
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("userid");
+  req.session = null;
   res.redirect("/login");
 });
 

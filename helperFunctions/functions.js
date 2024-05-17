@@ -18,19 +18,35 @@
 
 const bcrypt = require("bcryptjs");
 
+// const urlsForUser = function(userID, urlDatabase) {
+//   let userUrls = [];
+//   for (let shortUrl in urlDatabase) {
+//     console.log("short Url", shortUrl);
+//     console.log("user id", urlDatabase[shortUrl].userID);
+//     console.log("-----------------");
+//     if (urlDatabase[shortUrl].userID === userID) {
+//       userUrls.push(urlDatabase[shortUrl]);
+//     }
+//   }
+//   console.log(userUrls);
+//   return userUrls;
+// };
+
 const urlsForUser = function(userID, urlDatabase) {
-  let userUrls = [];
+  console.log(userID);
+  let userUrlDatabase = {};
   for (let shortUrl in urlDatabase) {
-    console.log("short Url", shortUrl);
-    console.log("user id", urlDatabase[shortUrl].userID);
+    console.log("short Url obj", urlDatabase[shortUrl]);
     console.log("-----------------");
     if (urlDatabase[shortUrl].userID === userID) {
-      userUrls.push(urlDatabase[shortUrl]);
+      userUrlDatabase[shortUrl] = urlDatabase[shortUrl];
     }
   }
-  console.log(userUrls);
-  return userUrls;
+  console.log("******************");
+  console.log("userUrlDatabase ", userUrlDatabase);
+  return userUrlDatabase;
 };
+
 
 
 
