@@ -1,11 +1,14 @@
 const express = require("express");
 const cookieParser = require('cookie-parser');
-const { registerUser, userAuthentication, findUserByEmail, findUserById} = require('./helperFunctions/functions');
+const { registerUser, userAuthentication, findUserByEmail, findUserById, urlsForUser} = require('./helperFunctions/functions');
+const bcrypt = require("bcryptjs");
+const morgan = require("morgan");
 const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
 
+app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -39,7 +42,7 @@ const generateRandomString = function() {
   return result;
 };
 
-let users = {aJ48lW: {email: "bob@123", password: "123"}};
+let users = {aJ48lW: {email: "bob@123", password: "$2a$10$EdXSeb1l/kvkvEtIk31M/Op3T6mL.M9KYq9KY0OkWEiXE6ldm4mRK"}};
 
 // const urlDatabase = {
 //   b2xVn2: "http://www.lighthouselabs.ca",
@@ -95,23 +98,24 @@ app.get("/login", (req, res) => {
 //   return userUrls;
 // };
 
-const urlsForUser = function(userID, urlDatabase) {
-  console.log(userID);
-  let userShortUrls = [];
-  for (let shortUrl in urlDatabase) {
-    console.log("short Url obj", urlDatabase[shortUrl]);
-    console.log("-----------------");
-    if (urlDatabase[shortUrl].userID === userID) {
-      userShortUrls.push(shortUrl);
-    }
-  }
-  console.log(userShortUrls);
-  return userShortUrls;
-};
+// const urlsForUser = function(userID, urlDatabase) {
+//   console.log(userID);
+//   let userShortUrls = [];
+//   for (let shortUrl in urlDatabase) {
+//     console.log("short Url obj", urlDatabase[shortUrl]);
+//     console.log("-----------------");
+//     if (urlDatabase[shortUrl].userID === userID) {
+//       userShortUrls.push(shortUrl);
+//     }
+//   }
+//   console.log(userShortUrls);
+//   return userShortUrls;
+// };
 
 
 app.get("/urls", (req, res) => {
   const userUrls = urlsForUser(req.cookies["userid"], urlDatabase);
+  
   const templateVars = {user: users[req.cookies["userid"]], userUrls: userUrls, allUrls: urlDatabase };
   res.render("urls_index", templateVars);
 });
@@ -180,6 +184,7 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect(`/urls`);
 });
 
+// the request from the update button that brings you to the urls/id page where you can make the actual edit
 app.post("/urls/:id/update", (req, res) => {
   if (!req.cookies["userid"]) {
     res.send(`Sorry, please login to update ${urlDatabase[req.params.id]}`);

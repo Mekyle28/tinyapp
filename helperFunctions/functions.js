@@ -16,9 +16,9 @@
 // const reqBodyExample3 = {email: "bobbyjoe@hayo.net", password: ""};
 
 
+const bcrypt = require("bcryptjs");
 
-
-const userUrlSorter = function(userID, urlDatabase) {
+const urlsForUser = function(userID, urlDatabase) {
   let userUrls = [];
   for (let shortUrl in urlDatabase) {
     console.log("short Url", shortUrl);
@@ -49,13 +49,15 @@ const registerUser = function(newUserInfoObj, users) {
   if ((newUserInfoObj.email).length < 1 || (newUserInfoObj.password).length < 1) {
     return { error: "all fields must be filled in to create an account!", user: null };
   }
-
+  const hashedPassword = bcrypt.hashSync(newUserInfoObj.password, 10);
+  console.log(hashedPassword);
+  console.log("123", bcrypt.hashSync("123", 10));
   const newUser = {
     email: newUserInfoObj.email,
-    password: newUserInfoObj.password,
+    password: hashedPassword,
     id: RandomId()
   };
-
+  console.log(newUser);
   return { error: null, user: newUser };
 
 };
@@ -69,7 +71,7 @@ const userAuthentication = function(email, password, users) {
   if (userObj.error) {
     return { error: `Error: email not found :( please make sure ${email} is the correct email`, user: null };
   }
-  if (users[idNum].password !== password) {
+  if (!bcrypt.compareSync(password, users[idNum].password)) {
     return { error: `Error: invalid password`, user: null };
   }
   return { error: null, user: idNum };
@@ -96,7 +98,7 @@ const findUserById = function(id, users) {
 
 };
 
-module.exports = { registerUser, userAuthentication, findUserByEmail, findUserById };
+module.exports = { registerUser, userAuthentication, findUserByEmail, findUserById, urlsForUser};
 
 // //test user authenticate
 
