@@ -1,15 +1,15 @@
 const express = require("express");
-const { registerUser, userAuthentication, findUserByEmail, findUserById, urlsForUser} = require('./helperFunctions/functions');
-const bcrypt = require("bcryptjs");
+const { registerUser, userAuthentication, findUserById, urlsForUser, generateRandomString} = require('./helperFunctions/functions');
 const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const app = express();
-const PORT = 8080;
+const PORT = 3000;
 
 app.set("view engine", "ejs");
 
 app.use(morgan('dev'));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cookieSession({
   name: 'session',
   keys: ["chicken55942"],
@@ -17,41 +17,19 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }));
 
-// app.use((req, res, next) => {
-//   const {error} = findUserById(req.session["userid"], users);
-//   const whiteList = ["/", "/login", "/register"];
-
-//   if (error && !whiteList.includes(req.url)) {
-//     return res.redirect("/login");
-//   }
-//   return next();
-// });
-
 app.use((req, res, next) => {
   const {error} = findUserById(req.session["userid"], users);
+  const whiteList = ["/", "/login", "/register", "/urls"];
 
-  if (error && (req.url === "/urls/new")) {
+  if (error && !whiteList.includes(req.url)) {
+    res.status(403);
     return res.redirect("/login");
   }
   return next();
 });
 
-const generateRandomString = function() {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  const charactersLength = characters.length;
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-};
+let users = {};
 
-let users = {aJ48lW: {email: "bob@123", password: "$2a$10$EdXSeb1l/kvkvEtIk31M/Op3T6mL.M9KYq9KY0OkWEiXE6ldm4mRK"}};
-
-// const urlDatabase = {
-//   b2xVn2: "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com",
-// };
 
 const urlDatabase = {
   b6UTxQ: {
@@ -71,6 +49,9 @@ const urlDatabase = {
 };
 
 app.get("/", (req, res) => {
+  if (!req.session["userid"]) {
+    res.redirect("/login");
+  }
   const templateVars = {user: users[req.session["userid"]], urls: urlDatabase };
   res.render("home_page", templateVars);
 });
@@ -87,36 +68,6 @@ app.get("/login", (req, res) => {
   res.render("login", templateVars);
 });
 
-
-// const urlsForUser = function(userID, urlDatabase) {
-//   console.log(userID);
-//   let userUrls = [];
-//   for (let shortUrl in urlDatabase) {
-//     console.log("short Url obj", urlDatabase[shortUrl]);
-//     console.log("user id", urlDatabase[shortUrl].userID);
-//     console.log("-----------------");
-//     if (urlDatabase[shortUrl].userID === userID) {
-//       userUrls.push(urlDatabase[shortUrl]);
-//     }
-//   }
-//   console.log(userUrls);
-//   return userUrls;
-// };
-
-// const urlsForUser = function(userID, urlDatabase) {
-//   console.log(userID);
-//   let userUrlDatabase = {};
-//   for (let shortUrl in urlDatabase) {
-//     console.log("short Url obj", urlDatabase[shortUrl]);
-//     console.log("-----------------");
-//     if (urlDatabase[shortUrl].userID === userID) {
-//       userUrlDatabase[shortUrl] = urlDatabase[shortUrl];
-//     }
-//   }
-//   console.log("******************");
-//   console.log("userUrlDatabase ", userUrlDatabase);
-//   return userUrlDatabase;
-// };
 
 app.get("/urls", (req, res) => {
   const userUrls = urlsForUser(req.session["userid"], urlDatabase);
@@ -141,6 +92,10 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get('/urls/:id/', (req, res) => {
+
+  if (urlDatabase[req.params.id]["userID"] !== req.session["userid"]) {
+    return  res.status(403).send("Error: you do not have acsess to this Url");
+  }
   const templateVars = {user: users[req.session["userid"]],
     id: req.params.id,
     longURL: urlDatabase[req.params.id].longURL};
@@ -154,13 +109,10 @@ app.get("/u/:id", (req, res) => {
 
 
 app.post("/register", (req, res) => {
-  //const userInfoFromForm = req.body;
-  //console.log("info from form", userInfoFromForm);
+
   const regUserinfo = registerUser(req.body, users);
-  console.log("info from function", regUserinfo);
   if (regUserinfo.error) {
-    // res.status(400).send(regUserinfo.error);
-    // return;
+    res.status(400);
     const templateVars = {error: regUserinfo.error, user: users[req.session["userid"]]};
     res.render("failed_registration", templateVars);
   }
@@ -194,20 +146,14 @@ app.post("/urls", (req, res) => {
   const tempShortULRObj = {longURL: req.body.longURL,
     userID: req.session["userid"],
     id: tempShortULR};
-  
-  console.log("tempShortURL should be alone", tempShortULR);
-  console.log("tempShortURLobj should be object with three thisngs", tempShortULRObj);
+
   urlDatabase[tempShortULR] = tempShortULRObj;
-  console.log("Updated Url Database", urlDatabase);
   res.redirect(`/urls/${tempShortULR}`); // Respond with 'Ok' (we will replace this)
 });
 
 app.post("/urls/:id/edit", (req, res) => {
   const shortU = (req.params.id);
   urlDatabase[shortU].longURL = req.body.updateLongURL;
-  console.log("---------'");
-  console.log("updated database after url has been edited", urlDatabase);
-  console.log("---------'");
   res.redirect("/urls");
   
 });
@@ -221,9 +167,6 @@ app.post("/login", (req, res) => {
   req.session.userid = login.user;
   res.redirect("/urls");
 });
-
-// res.status(400).send(regUserinfo.error);
-// return;
 
 app.post("/logout", (req, res) => {
   req.session = null;

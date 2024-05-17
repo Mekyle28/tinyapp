@@ -43,8 +43,13 @@
           </thead>
           <tbody>    
             <% for (let urlID in userUrls) { %>
-              <tr>
-                <td><%= urlID %></td>
+              <tr> 
+                <td>  
+                  <form class="form-inline" method="get" action= "/urls/<%= urlID %>">
+                    <button type="submit" class="btn btn-link"><%= urlID %></button>
+                   </form>
+                </td>
+              
                 <td><%= userUrls[urlID]["longURL"] %></td>
                 
 
@@ -67,7 +72,7 @@
         </table>
         <% } %>
       </main>
-      <a href="/">Go back home</a>
+      
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
