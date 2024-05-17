@@ -24,6 +24,14 @@
       <main style="margin: 1em;">
         <h3>My URLs</h3>
 
+        <% if (!user) { %>
+<p> Login to see your Urls!</p>
+<a href="/login"><button>Login</button></a>
+
+          <% } else { %>
+
+
+
         <table class="table">
           <thead>
             <tr>
@@ -33,20 +41,20 @@
               <th scope="col">Delete</th>
             </tr>
           </thead>
-          <tbody>
-            <% for (let id in urls) { %>
+          <tbody>    
+            <% for (let shortUrl of userUrls) { %>
               <tr>
-                <td><%= id %></td>
-                <td><%= urls[id] %></td>
+                <td><%= shortUrl %></td>
+                <td><%= allUrls[shortUrl].longURL %></td>
 
-                <td>  <% const pathUpdate = `/urls/${id}/update` %>
+                <td>  <% const pathUpdate = `/urls/${shortUrl}/update` %>
                   <form class="form-inline" method="POST" action= <%= pathUpdate %>>
                     <button type="submit" class="btn btn-primary">Update</button>
                    </form>
                 </td>
 
-                <td>  <% const pathDelete = `/urls/${id}/delete` %>
-                  <form  method="POST" action= "/urls/<%= id %>/delete">
+                <td>  <% const pathDelete = `/urls/${shortUrl}/delete` %>
+                  <form  method="POST" action= "/urls/<%= shortUrl %>/delete">
                   <form  method="POST" action= <%= pathDelete %>>
                   <button type="submit" class="btn btn-primary">Delete</button>
                  
@@ -56,6 +64,7 @@
             <% } %>
           </tbody>
         </table>
+        <% } %>
       </main>
       <a href="/">Go back home</a>
     <!-- Bootstrap JS -->

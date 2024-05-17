@@ -15,6 +15,25 @@
 // const reqBodyExample2 = {email: "user2@example.com", password: "wehcbs"};
 // const reqBodyExample3 = {email: "bobbyjoe@hayo.net", password: ""};
 
+
+
+
+const userUrlSorter = function(userID, urlDatabase) {
+  let userUrls = [];
+  for (let shortUrl in urlDatabase) {
+    console.log("short Url", shortUrl);
+    console.log("user id", urlDatabase[shortUrl].userID);
+    console.log("-----------------");
+    if (urlDatabase[shortUrl].userID === userID) {
+      userUrls.push(urlDatabase[shortUrl]);
+    }
+  }
+  console.log(userUrls);
+  return userUrls;
+};
+
+
+
 const RandomId = function() {
   return Math.random().toString(36).slice(2, 8);
 };
@@ -24,11 +43,11 @@ const registerUser = function(newUserInfoObj, users) {
   const checkEmailObj = findUserByEmail(newUserInfoObj.email, users);
   // is there was no error then the email was found and an account with it already exists
   if (!checkEmailObj.error) {
-    return {error: "An account with that email already exists"};
+    return { error: "An account with that email already exists" };
   }
 
   if ((newUserInfoObj.email).length < 1 || (newUserInfoObj.password).length < 1) {
-    return {error: "all fields must be filled in to create an account!", user: null};
+    return { error: "all fields must be filled in to create an account!", user: null };
   }
 
   const newUser = {
@@ -37,7 +56,7 @@ const registerUser = function(newUserInfoObj, users) {
     id: RandomId()
   };
 
-  return {error: null, user: newUser};
+  return { error: null, user: newUser };
 
 };
 
@@ -48,36 +67,36 @@ const userAuthentication = function(email, password, users) {
   const idNum = userObj.user;
   // if error is present the email wasn't found
   if (userObj.error) {
-    return {error: `Error: email not found :( please make sure ${email} is the correct email`, user: null};
+    return { error: `Error: email not found :( please make sure ${email} is the correct email`, user: null };
   }
   if (users[idNum].password !== password) {
-    return {error: `Error: invalid password`, user: null};
+    return { error: `Error: invalid password`, user: null };
   }
-  return {error: null, user: idNum};
+  return { error: null, user: idNum };
 };
 
 
 const findUserByEmail = function(email, users) {
   const userIdArr = Object.keys(users);
-  
+
   for (let idNum of userIdArr) {
     if (users[idNum].email === email) {
-      return {error: null, user: idNum};
+      return { error: null, user: idNum };
     }
   }
-  return {error: "No user with that email", user: null};
+  return { error: "No user with that email", user: null };
 };
 
 
 const findUserById = function(id, users) {
   if (!Object.keys(users).includes(id)) {
-    return {error: "id not found", user: null};
+    return { error: "id not found", user: null };
   }
-  return {error: null, user: users[id]};
-  
+  return { error: null, user: users[id] };
+
 };
 
-module.exports = { registerUser, userAuthentication, findUserByEmail, findUserById};
+module.exports = { registerUser, userAuthentication, findUserByEmail, findUserById };
 
 // //test user authenticate
 
