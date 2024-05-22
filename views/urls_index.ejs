@@ -53,15 +53,14 @@
                 <td><%= userUrls[urlID]["longURL"] %></td>
                 
 
-                <td>  <% const pathUpdate = `/urls/${urlID}/update` %>
-                  <form class="form-inline" method="POST" action= <%= pathUpdate %>>
+                <td>  
+                  <form class="form-inline" method="POST" action= "/urls/<%= urlID %>/update">
                     <button type="submit" class="btn btn-primary">Update</button>
                    </form>
                 </td>
 
-                <td>  <% const pathDelete = `/urls/${urlID}/delete` %>
+                <td>  
                   <form  method="POST" action= "/urls/<%= urlID %>/delete">
-                  <form  method="POST" action= <%= pathDelete %>>
                   <button type="submit" class="btn btn-primary">Delete</button>
                  
                 </form>
@@ -72,7 +71,9 @@
         </table>
         <% } %>
       </main>
-      
+      <% if (user) { %>
+      <a href="/urls/new">Create a New Short Link!</a>
+      <% } %>
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"

@@ -1,9 +1,10 @@
 const express = require("express");
-const { registerUser, userAuthentication, findUserById, urlsForUser, generateRandomString} = require('./helperFunctions/functions');
+const { registerUser, userAuthentication, findUserById, urlsForUser, generateRandomString } = require('./helperFunctions/functions');
+const {users, urlDatabase} = require('./database/database');
 const cookieSession = require('cookie-session');
 const morgan = require("morgan");
 const app = express();
-const PORT = 3000;
+const PORT = 8000;
 
 app.set("view engine", "ejs");
 
@@ -19,40 +20,22 @@ app.use(cookieSession({
 
 app.use((req, res, next) => {
   const {error} = findUserById(req.session["userid"], users);
-  const whiteList = ["/", "/login", "/register", "/urls"];
+  const whiteList = ["/", "/login", "/register", "/urls", "/u/:id", "/urls/:id"];
 
-  if (error && !whiteList.includes(req.url)) {
+  if (error && !whiteList.includes(req.url) && !req.url.match(/^\/u\/[a-zA-Z0-9]+$/)) {
     res.status(403);
-    return res.redirect("/login");
+    const templateVars = {user: users[req.session["userid"]], urls: urlDatabase };
+    res.render("message_login", templateVars);
   }
   return next();
 });
 
-let users = {};
-
-
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-
-  k3JoXr: {
-    longURL: "https://www.google.com",
-    userID: "j6sLsA",
-  },
-};
 
 app.get("/", (req, res) => {
   if (!req.session["userid"]) {
     res.redirect("/login");
   }
-  const templateVars = {user: users[req.session["userid"]], urls: urlDatabase };
+  const templateVars = { user: users[req.session["userid"]], urls: urlDatabase };
   res.render("home_page", templateVars);
 });
 
@@ -64,15 +47,15 @@ app.get("/login", (req, res) => {
   if (req.session["userid"]) {
     return res.redirect("/urls");
   }
-  const templateVars = {user: users[req.session["userid"]], urls: urlDatabase };
+  const templateVars = { user: users[req.session["userid"]], urls: urlDatabase };
   res.render("login", templateVars);
 });
 
 
 app.get("/urls", (req, res) => {
   const userUrls = urlsForUser(req.session["userid"], urlDatabase);
-  
-  const templateVars = {user: users[req.session["userid"]], userUrls: userUrls};
+
+  const templateVars = { user: users[req.session["userid"]], userUrls: userUrls };
   console.log("template vars", templateVars);
   res.render("urls_index", templateVars);
 });
@@ -81,24 +64,31 @@ app.get("/register", (req, res) => {
   if (req.session["userid"]) {
     return res.redirect("/urls");
   }
-  const templateVars = {user: users[req.session["userid"]]};
+  const templateVars = { user: users[req.session["userid"]] };
   res.render("register", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
 
-  const templateVars = {user: users[req.session["userid"]]};
+  const templateVars = { user: users[req.session["userid"]] };
   res.render("urls_new", templateVars);
 });
 
 app.get('/urls/:id/', (req, res) => {
-
-  if (urlDatabase[req.params.id]["userID"] !== req.session["userid"]) {
-    return  res.status(403).send("Error: you do not have acsess to this Url");
+  if (!req.session["userid"]) {
+    const templateVars = { user: users[req.session["userid"]], urls: urlDatabase };
+    res.render("message_login", templateVars);
   }
-  const templateVars = {user: users[req.session["userid"]],
+  if (urlDatabase[req.params.id]["userID"] !== req.session["userid"]) {
+    res.status(403);
+    const templateVars = { error: "Error: you do not have acsess to this Url", user: users[req.session["userid"]] };
+    res.render("error_page", templateVars);
+  }
+  const templateVars = {
+    user: users[req.session["userid"]],
     id: req.params.id,
-    longURL: urlDatabase[req.params.id].longURL};
+    longURL: urlDatabase[req.params.id].longURL
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -109,11 +99,10 @@ app.get("/u/:id", (req, res) => {
 
 
 app.post("/register", (req, res) => {
-
   const regUserinfo = registerUser(req.body, users);
   if (regUserinfo.error) {
     res.status(400);
-    const templateVars = {error: regUserinfo.error, user: users[req.session["userid"]]};
+    const templateVars = { error: regUserinfo.error, user: users[req.session["userid"]] };
     res.render("failed_registration", templateVars);
   }
   users[regUserinfo.user.id] = regUserinfo.user;
@@ -122,9 +111,13 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
+  const userUrls = urlsForUser(req.session["userid"], urlDatabase);
   if (!req.session["userid"]) {
     res.send(`Sorry, please login to delete ${urlDatabase[req.params.id]}`);
     return;
+  }
+  if (!userUrls[req.params.id]) {
+    return res.send("Sorry, you can only delete Urls you created");
   }
   delete urlDatabase[req.params.id];
   res.redirect(`/urls`);
@@ -143,9 +136,11 @@ app.post("/urls/:id/update", (req, res) => {
 //make new url
 app.post("/urls", (req, res) => {
   const tempShortULR = generateRandomString();
-  const tempShortULRObj = {longURL: req.body.longURL,
+  const tempShortULRObj = {
+    longURL: req.body.longURL,
     userID: req.session["userid"],
-    id: tempShortULR};
+    id: tempShortULR
+  };
 
   urlDatabase[tempShortULR] = tempShortULRObj;
   res.redirect(`/urls/${tempShortULR}`); // Respond with 'Ok' (we will replace this)
@@ -155,7 +150,7 @@ app.post("/urls/:id/edit", (req, res) => {
   const shortU = (req.params.id);
   urlDatabase[shortU].longURL = req.body.updateLongURL;
   res.redirect("/urls");
-  
+
 });
 
 app.post("/login", (req, res) => {
